@@ -41,11 +41,10 @@ export default function Footer({ onNavigate }) {
           <div className="footer-col-title">Mail & Registered Office</div>
           <p style={{ fontSize: 12, lineHeight: 1.6, opacity: 0.85 }}>
             GaneshKart Internet Private Limited,<br />
-            Buildings Alyssa, Begonia & Clove Embassy Tech Village,<br />
-            Outer Ring Road, Devarabeesanahalli Village,<br />
-            Bengaluru, 560103, Karnataka, India<br />
+            Ganesh Sawant House,Near Z.P. School,Villege Pandharewadi<br />
+            Tal-pandharpur,Dist-Solapur 413304, Maharashtra, India<br />
             CIN: U51109KA2026PTC123456<br />
-            Telephone: 080-45614700 / 080-69227000
+            Telephone: 8668811021 / 9307906400
           </p>
         </div>
       </div>
