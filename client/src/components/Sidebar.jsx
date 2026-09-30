@@ -1,14 +1,14 @@
 import React from 'react';
 import { 
   X, Home, Grid, Laptop, Smartphone, Shirt, ShoppingBag, 
-  Tv, Package, ShoppingCart, Heart, User, Settings, HelpCircle, LogOut 
+  Tv, Package, ShoppingCart, Heart, User, Settings, HelpCircle, LogOut, ShieldAlert 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 
 export default function Sidebar({ isOpen, onClose, onNavigate, activePage }) {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
 
@@ -129,6 +129,17 @@ export default function Sidebar({ isOpen, onClose, onNavigate, activePage }) {
 
           <div className="sidebar-divider" />
           <div className="sidebar-section-title">My Account & Activity</div>
+
+          {isAdmin && (
+            <li 
+              className={`sidebar-nav-item ${activePage === 'admin-dashboard' ? 'active' : ''}`}
+              style={{ background: '#fff8e1', color: '#b26a00', fontWeight: 700 }}
+              onClick={() => handleItemClick('admin-dashboard')}
+            >
+              <ShieldAlert size={19} color="#e65100" />
+              <span>👑 Admin Control Center</span>
+            </li>
+          )}
 
           <li 
             className={`sidebar-nav-item ${activePage === 'orders' ? 'active' : ''}`}

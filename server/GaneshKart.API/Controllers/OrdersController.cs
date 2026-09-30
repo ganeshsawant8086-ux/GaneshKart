@@ -43,6 +43,22 @@ namespace GaneshKart.API.Controllers
         }
 
         /// <summary>
+        /// Get all customer orders for Admin Panel
+        /// GET /api/orders/all
+        /// </summary>
+        [HttpGet("all")]
+        public async Task<ActionResult<IEnumerable<Order>>> GetAllOrdersForAdmin()
+        {
+            var orders = await _context.Orders
+                .Include(o => o.OrderItems)
+                .Include(o => o.Payments)
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+
+            return Ok(orders);
+        }
+
+        /// <summary>
         /// Get single order by id
         /// GET /api/orders/{id}
         /// </summary>

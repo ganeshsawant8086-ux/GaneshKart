@@ -2,6 +2,22 @@ using System.ComponentModel.DataAnnotations;
 
 namespace GaneshKart.API.DTOs
 {
+    public class AdminLoginDto
+    {
+        [Required]
+        public string AdminId { get; set; } = string.Empty;
+
+        [Required]
+        public string Password { get; set; } = string.Empty;
+    }
+
+    public class CustomerAuthDto
+    {
+        public string? PhoneNumber { get; set; }
+        public string? Email { get; set; }
+        public string? FullName { get; set; }
+    }
+
     public class LoginDto
     {
         [Required]

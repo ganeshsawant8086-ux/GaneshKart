@@ -11,10 +11,10 @@ import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { getProductElectronicDetails } from '../data/electronicsDetails';
 
-export default function ProductDetails({ productId, onBack, onNavigate }) {
+export default function ProductDetails({ productId, onBack, onNavigate, onOpenLogin }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { selectedAddress, addresses, selectAddress } = useAuth();
+  const { user, selectedAddress, addresses, selectAddress } = useAuth();
   const [pincode, setPincode] = useState('413304');
   const [pincodeChecked, setPincodeChecked] = useState(true);
   const [showAddressPicker, setShowAddressPicker] = useState(false);
@@ -117,6 +117,10 @@ export default function ProductDetails({ productId, onBack, onNavigate }) {
   const activeLabel = gallery[selectedImgIndex]?.label || 'Product Image';
 
   const handleBuyNow = async () => {
+    if (!user) {
+      if (onOpenLogin) onOpenLogin();
+      return;
+    }
     await addToCart(product.id, 1);
     onNavigate('checkout');
   };

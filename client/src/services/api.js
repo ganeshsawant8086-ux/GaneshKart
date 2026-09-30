@@ -264,6 +264,14 @@ export const api = {
     }
   },
 
+  getAllOrdersForAdmin: async () => {
+    try {
+      return await request('/orders/all');
+    } catch {
+      return getStorage('gk_orders', []);
+    }
+  },
+
   getOrderById: async (id) => {
     try {
       return await request(`/orders/${id}`);
@@ -418,6 +426,53 @@ export const api = {
       list = list.filter((item) => item.id !== Number(id));
       setStorage('gk_addresses', list);
       return { success: true };
+    }
+  },
+
+  // AUTH: ADMIN & CUSTOMER
+  adminLogin: async (adminId, password) => {
+    try {
+      return await request('/users/admin-login', {
+        method: 'POST',
+        body: JSON.stringify({ adminId, password }),
+      });
+    } catch (err) {
+      if (adminId?.trim() === '8668811021' && password === 'Admin123!') {
+        return {
+          id: 2,
+          fullName: 'Ganesh Sawant (Admin)',
+          phoneNumber: '8668811021',
+          email: 'admin@ganeshkart.com',
+          role: 'Admin',
+        };
+      }
+      throw new Error(err.message || 'Invalid Admin ID or Password. Only authorized administrator can log in.');
+    }
+  },
+
+  customerAuth: async ({ phoneNumber, email, fullName }) => {
+    try {
+      return await request('/users/customer-auth', {
+        method: 'POST',
+        body: JSON.stringify({ phoneNumber, email, fullName }),
+      });
+    } catch {
+      const customer = {
+        id: Date.now(),
+        fullName: fullName || (phoneNumber ? `Customer ${phoneNumber.slice(-4)}` : 'Customer'),
+        phoneNumber: phoneNumber || '9876543210',
+        email: email || `${phoneNumber || 'user'}@customer.ganeshkart.com`,
+        role: 'Customer',
+      };
+      return customer;
+    }
+  },
+
+  getCustomers: async () => {
+    try {
+      return await request('/users/customers');
+    } catch {
+      return [];
     }
   },
 };

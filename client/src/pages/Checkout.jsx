@@ -6,7 +6,7 @@ import CheckoutForm from '../components/CheckoutForm';
 import CartSummary from '../components/CartSummary';
 import { validateCityPincodeMatch } from '../data/indiaLocations';
 
-export default function Checkout({ onProceedToPayment, onBackToCart }) {
+export default function Checkout({ onProceedToPayment, onBackToCart, onOpenLogin }) {
   const { cart } = useCart();
   const { user, addresses = [], selectedAddress } = useAuth();
 
@@ -42,6 +42,12 @@ export default function Checkout({ onProceedToPayment, onBackToCart }) {
 
   const handlePlaceOrderClick = () => {
     setValidationError('');
+
+    if (!user) {
+      setValidationError('Please log in with your mobile number or email before placing your order.');
+      if (onOpenLogin) onOpenLogin();
+      return;
+    }
 
     if (!formData.customerName.trim()) {
       setValidationError('Please enter your full name.');
@@ -93,6 +99,46 @@ export default function Checkout({ onProceedToPayment, onBackToCart }) {
           <ArrowLeft size={18} />
           <span>Back to Cart</span>
         </button>
+
+        {!user && (
+          <div style={{
+            background: '#fff8e1',
+            border: '1.5px solid #ffe082',
+            padding: '14px 18px',
+            borderRadius: 'var(--radius-sm)',
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 10
+          }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#b26a00' }}>
+                Customer Login Required to Place Order
+              </div>
+              <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
+                Please sign in with your mobile number or email address to save order details.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenLogin}
+              style={{
+                background: 'var(--primary)',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: 4,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Log In Now
+            </button>
+          </div>
+        )}
 
         {validationError && (
           <div style={{ background: '#ffebee', color: '#c62828', padding: '12px 16px', borderRadius: 'var(--radius-sm)', marginBottom: 16, fontWeight: 600, fontSize: 14 }}>

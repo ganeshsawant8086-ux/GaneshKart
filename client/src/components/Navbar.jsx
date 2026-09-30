@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Menu, Search, ShoppingCart, Heart, User, Sparkles, 
-  MapPin, ChevronDown, Package, LogOut, Award, ShieldCheck 
+  MapPin, ChevronDown, Package, LogOut, Award, ShieldCheck, ShieldAlert 
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -18,7 +18,7 @@ export default function Navbar({
 }) {
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
-  const { user, selectedAddress, logout } = useAuth();
+  const { user, selectedAddress, logout, isAdmin } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
 
@@ -148,7 +148,22 @@ export default function Navbar({
                 }}
               >
                 <User size={18} />
-                <span className="hide-on-mobile">{user ? user.fullName.split(' ')[0] : 'Login'}</span>
+                <span className="hide-on-mobile">
+                  {user ? (isAdmin ? 'Admin' : user.fullName.split(' ')[0]) : 'Login'}
+                </span>
+                {isAdmin && (
+                  <span style={{
+                    fontSize: 10,
+                    background: '#ff9f00',
+                    color: '#fff',
+                    borderRadius: 3,
+                    padding: '1px 4px',
+                    fontWeight: 800,
+                    marginLeft: 2
+                  }}>
+                    ADMIN
+                  </span>
+                )}
                 <ChevronDown size={14} style={{ marginLeft: 2 }} />
               </button>
 
@@ -172,9 +187,49 @@ export default function Navbar({
                       </button>
                     </div>
                   ) : (
-                    <div style={{ padding: '10px 16px', background: '#f5f8ff', borderBottom: '1px solid #e0e0e0' }}>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>Hello, {user.fullName}</div>
-                      <div style={{ fontSize: 11, color: '#666' }}>{user.phoneNumber}</div>
+                    <div style={{ padding: '12px 16px', background: isAdmin ? '#fff8e1' : '#f5f8ff', borderBottom: '1px solid #e0e0e0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-dark)' }}>
+                          Hello, {user.fullName}
+                        </div>
+                        {isAdmin && (
+                          <span style={{
+                            background: 'linear-gradient(135deg, #e65100 0%, #ff8f00 100%)',
+                            color: '#fff',
+                            fontSize: 10,
+                            fontWeight: 800,
+                            padding: '2px 8px',
+                            borderRadius: 10,
+                            letterSpacing: 0.5,
+                            boxShadow: '0 2px 5px rgba(230,81,0,0.3)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3
+                          }}>
+                            👑 ADMIN
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>{user.phoneNumber}</div>
+                    </div>
+                  )}
+
+                  {isAdmin && (
+                    <div 
+                      className="nav-user-menu-item"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onNavigate('admin-dashboard');
+                      }}
+                      style={{
+                        background: '#fff3e0',
+                        color: '#bf360c',
+                        fontWeight: 700,
+                        borderBottom: '1px solid #ffe0b2'
+                      }}
+                    >
+                      <ShieldAlert size={16} color="#e65100" />
+                      <span>Admin Control Portal</span>
                     </div>
                   )}
 

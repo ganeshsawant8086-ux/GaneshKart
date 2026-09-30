@@ -1,10 +1,12 @@
 import React from 'react';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import CartSummary from '../components/CartSummary';
 
-export default function Cart({ onNavigate, onViewProduct }) {
+export default function Cart({ onNavigate, onViewProduct, onOpenLogin }) {
   const { cart, updateQuantity, removeFromCart, clearCart, loading } = useCart();
+  const { user } = useAuth();
 
   const items = Array.isArray(cart?.items) ? cart.items : [];
 
@@ -155,8 +157,14 @@ export default function Cart({ onNavigate, onViewProduct }) {
       {/* Right: Price Summary — Place Order goes to checkout */}
       <CartSummary
         cart={cart}
-        onProceed={() => onNavigate('checkout')}
-        buttonText="Place Order"
+        onProceed={() => {
+          if (!user) {
+            if (onOpenLogin) onOpenLogin();
+            return;
+          }
+          onNavigate('checkout');
+        }}
+        buttonText={user ? 'Place Order' : 'Login to Place Order'}
       />
     </div>
   );

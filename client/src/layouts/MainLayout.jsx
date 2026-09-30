@@ -19,6 +19,7 @@ import CategoriesPage from '../pages/CategoriesPage';
 import AccountPage from '../pages/AccountPage';
 import SettingsPage from '../pages/SettingsPage';
 import HelpSupportPage from '../pages/HelpSupportPage';
+import AdminDashboard from '../pages/AdminDashboard';
 
 export default function MainLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -127,6 +128,7 @@ export default function MainLayout() {
             productId={selectedProductId}
             onBack={() => navigateTo('products')}
             onNavigate={navigateTo}
+            onOpenLogin={() => setIsLoginModalOpen(true)}
           />
         )}
 
@@ -134,6 +136,7 @@ export default function MainLayout() {
           <Cart
             onNavigate={navigateTo}
             onViewProduct={handleViewProduct}
+            onOpenLogin={() => setIsLoginModalOpen(true)}
           />
         )}
 
@@ -141,6 +144,7 @@ export default function MainLayout() {
           <Checkout
             onProceedToPayment={handleProceedToPayment}
             onBackToCart={() => navigateTo('cart')}
+            onOpenLogin={() => setIsLoginModalOpen(true)}
           />
         )}
 
@@ -191,6 +195,13 @@ export default function MainLayout() {
 
         {currentPage === 'help' && (
           <HelpSupportPage />
+        )}
+
+        {currentPage === 'admin-dashboard' && (
+          <AdminDashboard
+            onNavigate={navigateTo}
+            onOpenLogin={() => setIsLoginModalOpen(true)}
+          />
         )}
       </main>
 

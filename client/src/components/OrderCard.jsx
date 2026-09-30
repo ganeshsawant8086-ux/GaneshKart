@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Package, CheckCircle2, Clock, Truck, ShieldAlert } from 'lucide-react';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const STATUS_STEPS = [
   'Order Placed',
@@ -11,6 +12,7 @@ const STATUS_STEPS = [
 ];
 
 export default function OrderCard({ order, onStatusUpdated }) {
+  const { isAdmin } = useAuth();
   const [updating, setUpdating] = useState(false);
   const currentStepIndex = STATUS_STEPS.indexOf(order.status) !== -1 
     ? STATUS_STEPS.indexOf(order.status) 
@@ -117,24 +119,26 @@ export default function OrderCard({ order, onStatusUpdated }) {
         <strong>Deliver To:</strong> {order.customerName} ({order.phoneNumber}) — {order.shippingAddress}
       </div>
 
-      {/* Interactive Simulation Controls */}
-      <div className="sim-controls-strip">
-        <span className="sim-label">⚡ Demo Status Simulator:</span>
-        {STATUS_STEPS.map((step) => (
-          <button
-            key={step}
-            disabled={updating || order.status === step}
-            className="sim-btn"
-            style={{
-              opacity: order.status === step ? 0.5 : 1,
-              fontWeight: order.status === step ? 800 : 600,
-            }}
-            onClick={() => handleSimulateStatus(step)}
-          >
-            {step}
-          </button>
-        ))}
-      </div>
+      {/* Interactive Simulation Controls - ONLY VISIBLE TO ADMIN */}
+      {isAdmin && (
+        <div className="sim-controls-strip">
+          <span className="sim-label">👑 Admin Status Controller:</span>
+          {STATUS_STEPS.map((step) => (
+            <button
+              key={step}
+              disabled={updating || order.status === step}
+              className="sim-btn"
+              style={{
+                opacity: order.status === step ? 0.5 : 1,
+                fontWeight: order.status === step ? 800 : 600,
+              }}
+              onClick={() => handleSimulateStatus(step)}
+            >
+              {step}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

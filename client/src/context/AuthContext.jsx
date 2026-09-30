@@ -4,22 +4,35 @@ import { api } from '../services/api';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gk_auth_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const isAdmin = Boolean(user && (user.role === 'Admin' || user.phoneNumber === '8668811021'));
+
   const loadProfileAndAddresses = useCallback(async () => {
     try {
       setLoading(true);
-      const userData = await api.getCurrentUser();
-      if (userData) setUser(userData);
+      const savedUserStr = localStorage.getItem('gk_auth_user');
+      if (savedUserStr) {
+        try {
+          const parsed = JSON.parse(savedUserStr);
+          setUser(parsed);
+        } catch {}
+      }
 
       const addrData = await api.getAddresses();
       if (addrData && Array.isArray(addrData)) {
         setAddresses(addrData);
 
-        // Determine currently active selected address
         const savedSelectedId = localStorage.getItem('gk_selected_address_id');
         let activeAddr = null;
 
@@ -86,11 +99,20 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = (userData) => {
+    try {
+      localStorage.setItem('gk_auth_user', JSON.stringify(userData));
+    } catch {}
     setUser(userData);
   };
 
   const logout = () => {
+    try {
+      localStorage.removeItem('gk_auth_user');
+      localStorage.removeItem('gk_selected_address_id');
+    } catch {}
     setUser(null);
+    setAddresses([]);
+    setSelectedAddress(null);
   };
 
   return (
@@ -98,6 +120,7 @@ export const AuthProvider = ({ children }) => {
       value={{
         user,
         isAuthenticated: !!user,
+        isAdmin,
         addresses,
         selectedAddress,
         selectAddress,

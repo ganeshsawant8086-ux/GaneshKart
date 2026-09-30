@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ChevronDown, CheckCircle2, ShieldCheck, ArrowRight, Smartphone, Mail, Lock } from 'lucide-react';
+import { X, ChevronDown, CheckCircle2, ShieldCheck, ArrowRight, Smartphone, Mail, Lock, ShieldAlert, KeyRound, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 
 export default function LoginModal({ isOpen, onClose, onNavigate }) {
   const { user, login } = useAuth();
 
-  // Mode: 'phone' or 'email'
+  // Tab: 'customer' | 'admin'
+  const [authTab, setAuthTab] = useState('customer');
+
+  // Customer Mode: 'phone' or 'email'
   const [loginMode, setLoginMode] = useState('phone');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -14,8 +18,14 @@ export default function LoginModal({ isOpen, onClose, onNavigate }) {
   const [otp, setOtp] = useState(['', '', '', '']);
   const [generatedOtp, setGeneratedOtp] = useState('1234');
   const [timer, setTimer] = useState(30);
+
+  // Admin Mode fields
+  const [adminId, setAdminId] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+
   const [error, setError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const otpInputRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
 
@@ -26,8 +36,11 @@ export default function LoginModal({ isOpen, onClose, onNavigate }) {
       setPhone('');
       setEmail('');
       setName('');
+      setAdminId('');
+      setAdminPassword('');
       setError('');
       setIsSuccess(false);
+      setSuccessMessage('');
       setOtp(['', '', '', '']);
     }
   }, [isOpen]);
@@ -101,7 +114,8 @@ export default function LoginModal({ isOpen, onClose, onNavigate }) {
     }
   };
 
-  const handleVerifyOtp = (e) => {
+  // Customer verification: saves to SQL Server
+  const handleVerifyOtp = async (e) => {
     e.preventDefault();
     const enteredOtp = otp.join('');
 
@@ -110,29 +124,61 @@ export default function LoginModal({ isOpen, onClose, onNavigate }) {
       return;
     }
 
-    // Create user payload
-    const customerFullName = name.trim() || (phone === '9756158795' ? 'Rahul Pawar' : 'Ganesh Sawant');
-    const customerPhone = phone ? `+91 ${phone}` : '+91 98765 43210';
-    const customerEmail = email || `${customerFullName.toLowerCase().replace(/\s+/g, '')}@ganeshkart.com`;
+    try {
+      const customerPayload = {
+        phoneNumber: phone ? phone : null,
+        email: email ? email : null,
+        fullName: name.trim() || null,
+      };
 
-    const loggedUser = {
-      id: 1,
-      fullName: customerFullName,
-      phoneNumber: customerPhone,
-      email: customerEmail,
-      role: 'Customer',
-    };
+      const loggedUser = await api.customerAuth(customerPayload);
+      login(loggedUser);
+      setSuccessMessage(`Welcome back, ${loggedUser.fullName}!`);
+      setIsSuccess(true);
 
-    login(loggedUser);
-    setIsSuccess(true);
-
-    setTimeout(() => {
-      onClose();
-      if (onNavigate) onNavigate('home');
-    }, 1200);
+      setTimeout(() => {
+        onClose();
+        if (onNavigate) onNavigate('home');
+      }, 1200);
+    } catch (err) {
+      setError(err.message || 'Authentication failed. Please try again.');
+    }
   };
 
-  const isInputValid = loginMode === 'phone' ? phone.length === 10 : email.includes('@');
+  // Admin login handler: strictly checks 8668811021 and Admin123!
+  const handleAdminSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    const cleanId = adminId.trim();
+    const cleanPass = adminPassword.trim();
+
+    if (!cleanId || !cleanPass) {
+      setError('Please enter both Admin ID and Password.');
+      return;
+    }
+
+    if (cleanId !== '8668811021' || cleanPass !== 'Admin123!') {
+      setError('Invalid Admin ID or Password. Only authorized administrator can log in.');
+      return;
+    }
+
+    try {
+      const adminUser = await api.adminLogin(cleanId, cleanPass);
+      login(adminUser);
+      setSuccessMessage('Administrator Verified! Opening Admin Control Portal...');
+      setIsSuccess(true);
+
+      setTimeout(() => {
+        onClose();
+        if (onNavigate) onNavigate('admin-dashboard');
+      }, 1200);
+    } catch (err) {
+      setError(err.message || 'Invalid Admin ID or Password.');
+    }
+  };
+
+  const isCustomerInputValid = loginMode === 'phone' ? phone.length === 10 : email.includes('@');
 
   return (
     <div className="login-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -143,38 +189,59 @@ export default function LoginModal({ isOpen, onClose, onNavigate }) {
 
       {/* Split Modal Card */}
       <div className="login-modal-card">
-        {/* Left Blue Column */}
-        <div className="login-modal-left">
+        {/* Left Column (Adaptive Blue for Customer, Dark Navy for Admin) */}
+        <div 
+          className="login-modal-left" 
+          style={{
+            background: authTab === 'admin' 
+              ? 'linear-gradient(135deg, #1a237e 0%, #0d47a1 100%)' 
+              : 'linear-gradient(135deg, #2874f0 0%, #1565c0 100%)'
+          }}
+        >
           <div className="login-modal-left-content">
-            <h2 className="login-modal-title">Login</h2>
+            <h2 className="login-modal-title">
+              {authTab === 'admin' ? 'Admin Portal' : 'Login'}
+            </h2>
             <p className="login-modal-subtitle">
-              Get access to your Orders, Wishlist and Recommendations
+              {authTab === 'admin'
+                ? 'Authorized Store Administrator Access for GaneshKart'
+                : 'Get access to your Orders, Wishlist and Recommendations'}
             </p>
+
+            {authTab === 'admin' && (
+              <div style={{
+                background: 'rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.25)',
+                padding: '10px 14px',
+                borderRadius: 6,
+                marginTop: 20,
+                fontSize: 12,
+                lineHeight: 1.5,
+                color: '#fff'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, marginBottom: 4 }}>
+                  <ShieldCheck size={16} color="#ffd54f" />
+                  <span>Authorized Personnel Only</span>
+                </div>
+                <span>Only master Admin ID &amp; Password can manage customer orders and change order delivery status.</span>
+              </div>
+            )}
           </div>
 
           {/* Flipkart-Style Graphic Illustration */}
           <div className="login-modal-illustration">
             <svg viewBox="0 0 280 180" fill="none" xmlns="http://www.w3.org/2000/svg" className="login-illustration-svg">
-              {/* Cloud & Sun */}
               <circle cx="95" cy="50" r="16" fill="#FBC02D" />
               <path d="M70 65C70 58.37 75.37 53 82 53C83.5 53 84.9 53.3 86.2 53.8C88.6 47.9 94.4 44 101 44C109.8 44 117 51.2 117 60C118.6 59.4 120.3 59 122 59C128.6 59 134 64.4 134 71C134 77.6 128.6 83 122 83H82C75.4 83 70 77.6 70 71Z" fill="#1E5BC6" opacity="0.85" />
-
-              {/* Red Shopping Gift Box */}
               <rect x="36" y="96" width="46" height="46" rx="4" fill="#E53935" />
               <rect x="55" y="96" width="8" height="46" fill="#D32F2F" />
               <rect x="36" y="115" width="46" height="8" fill="#D32F2F" />
               <circle cx="59" cy="94" r="5" fill="#FFCDD2" />
-
-              {/* Laptop Base & Screen */}
               <rect x="76" y="70" width="130" height="82" rx="6" fill="#424242" />
               <rect x="82" y="76" width="118" height="70" rx="3" fill="#FFFFFF" />
-              {/* Avatar on laptop screen */}
               <circle cx="141" cy="98" r="12" fill="#B0BEC5" />
               <path d="M125 124C125 115 132 113 141 113C150 113 157 115 157 124H125Z" fill="#B0BEC5" />
-              {/* Laptop bottom bar */}
               <path d="M64 152H218C221.3 152 224 154.7 224 158H58C58 154.7 60.7 152 64 152Z" fill="#B0BEC5" />
-
-              {/* Yellow Shopping Bag with GaneshKart emblem */}
               <rect x="188" y="105" width="44" height="46" rx="4" fill="#FFB300" />
               <path d="M198 105C198 97 203 92 210 92C217 92 222 97 222 105" stroke="#FFA000" strokeWidth="3" strokeLinecap="round" />
               <path d="M202 120L210 128L218 120" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
@@ -184,22 +251,155 @@ export default function LoginModal({ isOpen, onClose, onNavigate }) {
 
         {/* Right Form Column */}
         <div className="login-modal-right">
+          {/* Top Role Switcher (Customer vs Admin) */}
+          <div style={{
+            display: 'flex',
+            background: '#f1f3f6',
+            borderRadius: 8,
+            padding: 4,
+            marginBottom: 20
+          }}>
+            <button
+              type="button"
+              onClick={() => { setAuthTab('customer'); setError(''); }}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: 6,
+                border: 'none',
+                background: authTab === 'customer' ? '#ffffff' : 'transparent',
+                color: authTab === 'customer' ? 'var(--primary)' : '#666',
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                boxShadow: authTab === 'customer' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              <User size={15} />
+              <span>Customer Login</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setAuthTab('admin'); setError(''); }}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: 6,
+                border: 'none',
+                background: authTab === 'admin' ? '#1a237e' : 'transparent',
+                color: authTab === 'admin' ? '#ffffff' : '#666',
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                boxShadow: authTab === 'admin' ? '0 1px 3px rgba(0,0,0,0.15)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              <ShieldAlert size={15} color={authTab === 'admin' ? '#ffd54f' : '#888'} />
+              <span>Admin Login</span>
+            </button>
+          </div>
+
           {isSuccess ? (
-            <div className="login-success-state animate-slide-up">
+            <div className="login-success-state animate-slide-up" style={{ textAlign: 'center', padding: '40px 10px' }}>
               <CheckCircle2 size={54} color="#388e3c" style={{ margin: '0 auto 16px' }} />
               <h3 style={{ fontSize: 20, fontWeight: 700, color: '#212121' }}>Login Successful!</h3>
               <p style={{ color: '#666', fontSize: 14, marginTop: 6 }}>
-                Welcome back to GaneshKart.
+                {successMessage || 'Welcome back to GaneshKart.'}
               </p>
             </div>
-          ) : step === 'input' ? (
-            <form onSubmit={handleRequestOtp} className="login-form-container">
-              <h3 className="login-right-title">Log in for the best experience</h3>
+          ) : authTab === 'admin' ? (
+            /* ================= ADMIN LOGIN FORM ================= */
+            <form onSubmit={handleAdminSubmit} className="login-form-container">
+              <h3 className="login-right-title">Administrator Authentication</h3>
               <p className="login-right-subtitle">
-                {loginMode === 'phone' ? 'Enter your phone number to continue' : 'Enter your email address to continue'}
+                Authorized staff sign-in to access customer database and order simulator authority.
               </p>
 
-              {/* Phone / Email input with floating label style */}
+              {/* Admin ID / Mobile Input */}
+              <div className="form-group" style={{ marginBottom: 14 }}>
+                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>
+                  Admin ID / Registered Mobile
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Enter Admin ID (8668811021)"
+                    value={adminId}
+                    onChange={(e) => { setAdminId(e.target.value); setError(''); }}
+                    autoFocus
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Admin Password Input */}
+              <div className="form-group" style={{ marginBottom: 14 }}>
+                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>
+                  Master Password
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="password"
+                    className="form-input"
+                    placeholder="Enter Admin Password (Admin123!)"
+                    value={adminPassword}
+                    onChange={(e) => { setAdminPassword(e.target.value); setError(''); }}
+                    required
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="login-error-alert animate-slide-up" style={{ marginBottom: 14 }}>
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="login-continue-btn active"
+                style={{
+                  background: 'linear-gradient(135deg, #1a237e 0%, #0d47a1 100%)',
+                  marginTop: 10
+                }}
+              >
+                <Lock size={16} />
+                <span>Verify &amp; Enter Admin Portal</span>
+              </button>
+
+              <div style={{
+                marginTop: 18,
+                padding: '8px 12px',
+                background: '#f5f5f5',
+                borderRadius: 4,
+                fontSize: 11,
+                color: '#666',
+                lineHeight: 1.4
+              }}>
+                🔒 <strong>Restricted:</strong> Unauthorized attempts are logged. Correct Admin ID: <code>8668811021</code>.
+              </div>
+            </form>
+          ) : step === 'input' ? (
+            /* ================= CUSTOMER STEP 1: PHONE/EMAIL INPUT ================= */
+            <form onSubmit={handleRequestOtp} className="login-form-container">
+              <h3 className="login-right-title">Customer Login / Quick Register</h3>
+              <p className="login-right-subtitle">
+                {loginMode === 'phone' ? 'Enter your 10-digit mobile number' : 'Enter your email address to continue'}
+              </p>
+
+              {/* Phone / Email input */}
               {loginMode === 'phone' ? (
                 <div className="login-floating-input-group">
                   <div className="login-prefix-box">
@@ -235,7 +435,7 @@ export default function LoginModal({ isOpen, onClose, onNavigate }) {
               <div className="login-name-optional">
                 <input
                   type="text"
-                  placeholder="Your Name (Optional, e.g. Rahul Pawar)"
+                  placeholder="Your Full Name (Optional)"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="login-secondary-input"
@@ -252,7 +452,7 @@ export default function LoginModal({ isOpen, onClose, onNavigate }) {
                   }}
                   className="login-mode-toggle-btn"
                 >
-                  {loginMode === 'phone' ? 'Use Email-ID' : 'Use Phone Number'}
+                  {loginMode === 'phone' ? 'Use Email-ID instead' : 'Use Phone Number instead'}
                 </button>
               </div>
 
@@ -264,7 +464,7 @@ export default function LoginModal({ isOpen, onClose, onNavigate }) {
 
               {/* Legal Terms disclaimer */}
               <p className="login-terms-text">
-                By continuing, you confirm that you are above 18 years of age, and you agree to the GaneshKart's{' '}
+                By continuing, you agree to GaneshKart's{' '}
                 <a href="#terms" onClick={(e) => { e.preventDefault(); onClose(); onNavigate?.('help'); }}>Terms of Use</a>{' '}
                 and{' '}
                 <a href="#privacy" onClick={(e) => { e.preventDefault(); onClose(); onNavigate?.('help'); }}>Privacy Policy</a>.
@@ -273,14 +473,14 @@ export default function LoginModal({ isOpen, onClose, onNavigate }) {
               {/* Continue button */}
               <button
                 type="submit"
-                disabled={!isInputValid}
-                className={`login-continue-btn ${isInputValid ? 'active' : ''}`}
+                disabled={!isCustomerInputValid}
+                className={`login-continue-btn ${isCustomerInputValid ? 'active' : ''}`}
               >
-                <span>Continue</span>
+                <span>Request OTP</span>
               </button>
             </form>
           ) : (
-            /* Step 2: OTP Verification */
+            /* ================= CUSTOMER STEP 2: OTP VERIFICATION ================= */
             <form onSubmit={handleVerifyOtp} className="login-form-container animate-slide-up">
               <h3 className="login-right-title">Please enter the OTP</h3>
               <p className="login-right-subtitle">
@@ -347,7 +547,7 @@ export default function LoginModal({ isOpen, onClose, onNavigate }) {
                 className={`login-continue-btn ${otp.join('').length === 4 ? 'active' : ''}`}
                 style={{ marginTop: 20 }}
               >
-                <span>Verify & Log In</span>
+                <span>Verify &amp; Log In</span>
               </button>
             </form>
           )}
