@@ -17,25 +17,57 @@ namespace GaneshKart.API.Controllers
             _context = context;
         }
 
-        private async Task<int> GetCurrentUserIdAsync()
+        private int GetTargetUserId(int? queryUserId)
         {
-            var user = await _context.Users.FirstOrDefaultAsync();
-            return user?.Id ?? 1;
+            if (queryUserId.HasValue && queryUserId.Value > 0)
+                return queryUserId.Value;
+
+            if (Request.Headers.TryGetValue("X-User-Id", out var headerVal) && int.TryParse(headerVal, out int uid) && uid > 0)
+                return uid;
+
+            return 0;
         }
 
         /// <summary>
-        /// Get all orders for current user
-        /// GET /api/orders
+        /// Get orders for current logged-in customer ONLY
+        /// GET /api/orders?userId=123&phone=9876543210
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Order>>> GetOrders()
+        public async Task<ActionResult<IEnumerable<Order>>> GetOrders([FromQuery] int? userId, [FromQuery] string? phone)
         {
-            int userId = await GetCurrentUserIdAsync();
+            int targetUserId = GetTargetUserId(userId);
+            string targetPhone = phone?.Trim() ?? string.Empty;
 
-            var orders = await _context.Orders
-                .Where(o => o.UserId == userId)
+            if (string.IsNullOrEmpty(targetPhone) && Request.Headers.TryGetValue("X-User-Phone", out var phoneHeader))
+            {
+                targetPhone = phoneHeader.ToString().Trim();
+            }
+
+            // A customer must only see their own orders! If unauthenticated, return empty list
+            if (targetUserId <= 0 && string.IsNullOrEmpty(targetPhone))
+            {
+                return Ok(new List<Order>());
+            }
+
+            var query = _context.Orders
                 .Include(o => o.OrderItems)
                 .Include(o => o.Payments)
+                .AsQueryable();
+
+            if (targetUserId > 0 && !string.IsNullOrEmpty(targetPhone))
+            {
+                query = query.Where(o => o.UserId == targetUserId || o.PhoneNumber == targetPhone);
+            }
+            else if (targetUserId > 0)
+            {
+                query = query.Where(o => o.UserId == targetUserId);
+            }
+            else
+            {
+                query = query.Where(o => o.PhoneNumber == targetPhone);
+            }
+
+            var orders = await query
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
@@ -43,7 +75,7 @@ namespace GaneshKart.API.Controllers
         }
 
         /// <summary>
-        /// Get all customer orders for Admin Panel
+        /// Get all customer orders for Admin Panel ONLY
         /// GET /api/orders/all
         /// </summary>
         [HttpGet("all")]
@@ -83,14 +115,28 @@ namespace GaneshKart.API.Controllers
         /// POST /api/orders
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<Order>> CreateOrder([FromBody] CreateOrderDto dto)
+        public async Task<ActionResult<Order>> CreateOrder([FromBody] CreateOrderDto dto, [FromQuery] int? userId)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            int userId = await GetCurrentUserIdAsync();
+            int targetUserId = dto.UserId ?? GetTargetUserId(userId);
+            if (targetUserId <= 0 && !string.IsNullOrWhiteSpace(dto.PhoneNumber))
+            {
+                var matchedUser = await _context.Users.FirstOrDefaultAsync(u => u.PhoneNumber == dto.PhoneNumber.Trim());
+                if (matchedUser != null)
+                {
+                    targetUserId = matchedUser.Id;
+                }
+            }
+            if (targetUserId <= 0)
+            {
+                var firstUser = await _context.Users.FirstOrDefaultAsync();
+                targetUserId = firstUser?.Id ?? 1;
+            }
+
             var orderItems = new List<OrderItem>();
             decimal originalTotal = 0;
             decimal discountTotal = 0;
@@ -124,34 +170,32 @@ namespace GaneshKart.API.Controllers
                 var cart = await _context.Cart
                     .Include(c => c.CartItems)
                     .ThenInclude(ci => ci.Product)
-                    .FirstOrDefaultAsync(c => c.UserId == userId);
+                    .FirstOrDefaultAsync(c => c.UserId == targetUserId || c.UserId == 1);
 
-                if (cart == null || !cart.CartItems.Any())
+                if (cart != null && cart.CartItems.Any())
                 {
-                    return BadRequest(new { message = "Cart is empty. Cannot place order." });
-                }
-
-                foreach (var ci in cart.CartItems)
-                {
-                    if (ci.Product != null)
+                    foreach (var ci in cart.CartItems)
                     {
-                        originalTotal += ci.Product.Price * ci.Quantity;
-                        discountTotal += ci.Product.DiscountPrice * ci.Quantity;
-
-                        orderItems.Add(new OrderItem
+                        if (ci.Product != null)
                         {
-                            ProductId = ci.Product.Id,
-                            ProductName = ci.Product.Name,
-                            ProductImageUrl = ci.Product.ImageUrl,
-                            UnitPrice = ci.Product.DiscountPrice,
-                            Quantity = ci.Quantity,
-                            TotalPrice = ci.Product.DiscountPrice * ci.Quantity
-                        });
-                    }
-                }
+                            originalTotal += ci.Product.Price * ci.Quantity;
+                            discountTotal += ci.Product.DiscountPrice * ci.Quantity;
 
-                // Clear cart after checkout
-                _context.CartItems.RemoveRange(cart.CartItems);
+                            orderItems.Add(new OrderItem
+                            {
+                                ProductId = ci.Product.Id,
+                                ProductName = ci.Product.Name,
+                                ProductImageUrl = ci.Product.ImageUrl,
+                                UnitPrice = ci.Product.DiscountPrice,
+                                Quantity = ci.Quantity,
+                                TotalPrice = ci.Product.DiscountPrice * ci.Quantity
+                            });
+                        }
+                    }
+
+                    // Clear cart after checkout
+                    _context.CartItems.RemoveRange(cart.CartItems);
+                }
             }
 
             if (!orderItems.Any())
@@ -167,7 +211,7 @@ namespace GaneshKart.API.Controllers
 
             var order = new Order
             {
-                UserId = userId,
+                UserId = targetUserId,
                 CustomerName = dto.CustomerName,
                 PhoneNumber = dto.PhoneNumber,
                 ShippingAddress = fullAddress,

@@ -184,6 +184,7 @@ export default function MainLayout() {
         {currentPage === 'orders' && (
           <MyOrders
             onNavigate={navigateTo}
+            onOpenLogin={() => setIsLoginModalOpen(true)}
           />
         )}
 

@@ -256,11 +256,26 @@ export const api = {
   },
 
   // ORDERS & CHECKOUT
-  getOrders: async () => {
+  getOrders: async (userId, phone) => {
     try {
-      return await request('/orders');
+      const params = new URLSearchParams();
+      if (userId) params.append('userId', userId);
+      if (phone) params.append('phone', phone);
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      return await request(`/orders${qs}`, {
+        headers: {
+          ...(userId ? { 'X-User-Id': String(userId) } : {}),
+          ...(phone ? { 'X-User-Phone': String(phone) } : {}),
+        },
+      });
     } catch {
-      return getStorage('gk_orders', []);
+      const allOrders = getStorage('gk_orders', []);
+      if (!userId && !phone) return [];
+      return allOrders.filter((o) => {
+        const matchesUser = userId && Number(o.userId) === Number(userId);
+        const matchesPhone = phone && o.phoneNumber && String(o.phoneNumber).replace(/\D/g, '').endsWith(String(phone).replace(/\D/g, '').slice(-10));
+        return matchesUser || matchesPhone;
+      });
     }
   },
 
@@ -281,23 +296,31 @@ export const api = {
     }
   },
 
-  createOrder: async (orderData) => {
+  createOrder: async (orderData, userId) => {
     try {
-      return await request('/orders', {
+      const payload = {
+        ...orderData,
+        userId: userId || orderData.userId,
+      };
+      return await request(userId ? `/orders?userId=${userId}` : '/orders', {
         method: 'POST',
-        body: JSON.stringify(orderData),
+        headers: userId ? { 'X-User-Id': String(userId) } : {},
+        body: JSON.stringify(payload),
       });
     } catch {
       const orders = getStorage('gk_orders', []);
       const newOrder = {
         id: Date.now(),
+        userId: userId || orderData.userId || 1,
         orderNumber: `GK-ORD-${Math.floor(100000 + Math.random() * 900000)}`,
         orderDate: new Date().toISOString(),
         status: 'Confirmed',
+        customerName: orderData.customerName || 'Customer',
+        phoneNumber: orderData.phoneNumber || '',
         totalAmount: orderData.totalAmount || 0,
         paymentStatus: 'Paid',
         paymentMethod: orderData.paymentMethod || 'UPI',
-        deliveryAddress: orderData.deliveryAddress || 'No address provided',
+        deliveryAddress: orderData.shippingAddress || orderData.deliveryAddress || 'No address provided',
         items: orderData.items || [],
       };
       orders.unshift(newOrder);

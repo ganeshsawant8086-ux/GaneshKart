@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import PaymentForm from '../components/PaymentForm';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { ShieldCheck, ArrowLeft } from 'lucide-react';
 
 export default function DummyPayment({ checkoutData, onOrderCompleted, onBackToCheckout }) {
   const { cart, refreshCart } = useCart();
+  const { user } = useAuth();
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
   const handlePaymentSuccess = async (paymentResult) => {
@@ -13,6 +15,7 @@ export default function DummyPayment({ checkoutData, onOrderCompleted, onBackToC
     try {
       // Create order in backend API and SQL Server database
       const orderPayload = {
+        userId: user?.id || null,
         customerName: checkoutData.customerName,
         phoneNumber: checkoutData.phoneNumber,
         email: checkoutData.email,
@@ -24,7 +27,7 @@ export default function DummyPayment({ checkoutData, onOrderCompleted, onBackToC
         transactionId: paymentResult.transactionId,
       };
 
-      const createdOrder = await api.createOrder(orderPayload);
+      const createdOrder = await api.createOrder(orderPayload, user?.id);
       await refreshCart(); // Refresh cart to clear
       onOrderCompleted(createdOrder, paymentResult);
     } catch (err) {
