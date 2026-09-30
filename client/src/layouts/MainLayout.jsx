@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import CategoryMenu from '../components/CategoryMenu';
 import Footer from '../components/Footer';
+import LoginModal from '../components/LoginModal';
 
 // Pages
 import Home from '../pages/Home';
@@ -21,6 +22,7 @@ import HelpSupportPage from '../pages/HelpSupportPage';
 
 export default function MainLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState('home');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,6 +85,7 @@ export default function MainLayout() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onSearchSubmit={handleSearchSubmit}
+        onOpenLogin={() => setIsLoginModalOpen(true)}
       />
 
       {/* 2. Category Strip (displayed on home, products, and categories) */}
@@ -193,6 +196,13 @@ export default function MainLayout() {
 
       {/* 5. Indian E-Commerce Footer */}
       <Footer onNavigate={navigateTo} />
+
+      {/* 6. Flipkart-style Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onNavigate={navigateTo}
+      />
     </div>
   );
 }
