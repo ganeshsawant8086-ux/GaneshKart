@@ -2,21 +2,26 @@ import React from 'react';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
 
 export default function CartSummary({ cart, onProceed, buttonText = 'Proceed to Checkout' }) {
-  const isFreeDelivery = cart.deliveryCharge === 0;
+  const totalItems = cart?.totalItems ?? (Array.isArray(cart?.items) ? cart.items.length : 0);
+  const originalTotal = cart?.originalTotal ?? 0;
+  const totalSavings = cart?.totalSavings ?? 0;
+  const deliveryCharge = cart?.deliveryCharge ?? 0;
+  const finalAmount = cart?.finalAmount ?? 0;
+  const isFreeDelivery = deliveryCharge === 0;
 
   return (
     <div className="price-summary-card">
       <h3 className="price-summary-title">Price Details</h3>
 
       <div className="summary-row">
-        <span>Price ({cart.totalItems} {cart.totalItems === 1 ? 'item' : 'items'})</span>
-        <span>₹{cart.originalTotal?.toLocaleString('en-IN')}</span>
+        <span>Price ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
+        <span>₹{originalTotal.toLocaleString('en-IN')}</span>
       </div>
 
       <div className="summary-row">
         <span>Discount</span>
         <span style={{ color: 'var(--success-green)', fontWeight: 600 }}>
-          - ₹{cart.totalSavings?.toLocaleString('en-IN')}
+          - ₹{totalSavings.toLocaleString('en-IN')}
         </span>
       </div>
 
@@ -36,17 +41,17 @@ export default function CartSummary({ cart, onProceed, buttonText = 'Proceed to 
 
       <div className="summary-row total">
         <span>Total Amount</span>
-        <span>₹{cart.finalAmount?.toLocaleString('en-IN')}</span>
+        <span>₹{finalAmount.toLocaleString('en-IN')}</span>
       </div>
 
-      {cart.totalSavings > 0 && (
+      {totalSavings > 0 && (
         <div className="savings-highlight">
-          🎉 You will save ₹{cart.totalSavings?.toLocaleString('en-IN')} on this order
+          🎉 You will save ₹{totalSavings.toLocaleString('en-IN')} on this order
         </div>
       )}
 
       {onProceed && (
-        <button className="btn-proceed" onClick={onProceed} disabled={cart.totalItems === 0}>
+        <button className="btn-proceed" onClick={onProceed} disabled={totalItems === 0}>
           <span>{buttonText}</span>
           <ArrowRight size={18} />
         </button>

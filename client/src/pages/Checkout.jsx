@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldCheck, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -8,9 +8,9 @@ import { validateCityPincodeMatch } from '../data/indiaLocations';
 
 export default function Checkout({ onProceedToPayment, onBackToCart }) {
   const { cart } = useCart();
-  const { user, addresses, selectedAddress } = useAuth();
+  const { user, addresses = [], selectedAddress } = useAuth();
 
-  const activeAddr = selectedAddress || addresses[0] || null;
+  const activeAddr = selectedAddress || (Array.isArray(addresses) && addresses[0]) || null;
 
   const [formData, setFormData] = useState({
     customerName: activeAddr?.fullName || user?.fullName || '',
@@ -69,6 +69,8 @@ export default function Checkout({ onProceedToPayment, onBackToCart }) {
     onProceedToPayment(formData);
   };
 
+  const items = Array.isArray(cart?.items) ? cart.items : [];
+
   return (
     <div className="cart-layout" style={{ marginTop: 20 }}>
       {/* Left: Address Selection & Form + Items Review */}
@@ -82,7 +84,10 @@ export default function Checkout({ onProceedToPayment, onBackToCart }) {
             color: 'var(--primary)',
             fontWeight: 700,
             fontSize: 14,
-            marginBottom: 16
+            marginBottom: 16,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer'
           }}
         >
           <ArrowLeft size={18} />
@@ -105,21 +110,28 @@ export default function Checkout({ onProceedToPayment, onBackToCart }) {
         {/* 2. Order Items Review Preview */}
         <div style={{ background: '#fff', padding: 20, borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)', marginTop: 20 }}>
           <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14 }}>
-            Order Summary ({cart.totalItems} Items)
+            Order Summary ({cart?.totalItems || items.length} Items)
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {cart.items.map((item) => (
-              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 10, borderBottom: '1px solid var(--border-light)' }}>
-                <img src={item.productImageUrl} alt={item.productName} style={{ width: 44, height: 44, objectFit: 'contain' }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>{item.productName}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Qty: {item.quantity}</div>
+            {items.map((item) => {
+              const itemPrice = item.discountPrice || item.product?.discountPrice || item.price || 0;
+              const itemName = item.productName || item.product?.name || 'Product';
+              const itemImg = item.productImageUrl || item.product?.imageUrl || '';
+              return (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 10, borderBottom: '1px solid var(--border-light)' }}>
+                  {itemImg && (
+                    <img src={itemImg} alt={itemName} style={{ width: 44, height: 44, objectFit: 'contain' }} />
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{itemName}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Qty: {item.quantity}</div>
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>
+                    ₹{(itemPrice * item.quantity).toLocaleString('en-IN')}
+                  </div>
                 </div>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>
-                  ₹{(item.discountPrice * item.quantity).toLocaleString('en-IN')}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -128,7 +140,7 @@ export default function Checkout({ onProceedToPayment, onBackToCart }) {
       <CartSummary
         cart={cart}
         onProceed={handlePlaceOrderClick}
-        buttonText="Place Dummy Order"
+        buttonText="Continue to Payment"
       />
     </div>
   );
