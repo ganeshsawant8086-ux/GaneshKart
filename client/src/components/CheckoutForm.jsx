@@ -5,11 +5,21 @@ import LocationAutocomplete from './LocationAutocomplete';
 import { validateCityPincodeMatch } from '../data/indiaLocations';
 
 export default function CheckoutForm({ formData, setFormData, onPlaceOrder, addresses = [] }) {
-  const [selectedAddressId, setSelectedAddressId] = useState(addresses[0]?.id || null);
+  const { selectedAddress, selectAddress } = useAuth();
+  const [selectedAddressId, setSelectedAddressId] = useState(selectedAddress?.id || addresses[0]?.id || null);
   const [isAddingNew, setIsAddingNew] = useState(addresses.length === 0);
+
+  React.useEffect(() => {
+    if (selectedAddress?.id) {
+      setSelectedAddressId(selectedAddress.id);
+    } else if (addresses.length > 0 && !selectedAddressId) {
+      setSelectedAddressId(addresses[0].id);
+    }
+  }, [selectedAddress, addresses]);
 
   const handleSelectAddress = (addr) => {
     setSelectedAddressId(addr.id);
+    selectAddress(addr);
     setIsAddingNew(false);
     setFormData((prev) => ({
       ...prev,

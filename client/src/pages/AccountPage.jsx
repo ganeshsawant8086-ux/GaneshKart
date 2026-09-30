@@ -6,9 +6,23 @@ import LocationAutocomplete from '../components/LocationAutocomplete';
 import { validateCityPincodeMatch } from '../data/indiaLocations';
 
 export default function AccountPage({ onNavigate }) {
-  const { user, addresses, refreshAddresses } = useAuth();
+  const { user, addresses, selectedAddress, selectAddress, addAddress, deleteAddress, refreshAddresses } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalError, setModalError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
+
+  const handleDeleteAddress = async (id) => {
+    if (window.confirm('Are you sure you want to delete this delivery address?')) {
+      setDeletingId(id);
+      try {
+        await deleteAddress(id);
+      } catch (err) {
+        alert('Failed to delete address');
+      } finally {
+        setDeletingId(null);
+      }
+    }
+  };
 
   const initialBlankAddress = {
     fullName: '',
@@ -67,10 +81,9 @@ export default function AccountPage({ onNavigate }) {
     }
 
     try {
-      await api.addAddress(newAddr);
+      await addAddress(newAddr);
       setShowAddModal(false);
-      refreshAddresses();
-      alert('Address added successfully!');
+      alert('Address added and set as active delivery address!');
     } catch (err) {
       setModalError('Failed to save address: ' + err.message);
     }
@@ -168,40 +181,92 @@ export default function AccountPage({ onNavigate }) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {addresses.map((addr) => (
-            <div
-              key={addr.id}
-              style={{
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                padding: 16,
-                position: 'relative'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontWeight: 700, fontSize: 14 }}>{addr.fullName}</span>
-                <span style={{
-                  background: '#f0f0f0',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: '2px 6px',
-                  borderRadius: 3,
-                  textTransform: 'uppercase'
-                }}>
-                  {addr.addressType}
-                </span>
-                {addr.isDefault && (
-                  <span style={{ fontSize: 11, color: 'var(--success-green)', fontWeight: 700 }}>
-                    Default
-                  </span>
-                )}
-                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{addr.mobileNumber}</span>
+          {addresses.map((addr) => {
+            const isSelected = selectedAddress?.id === addr.id;
+            return (
+              <div
+                key={addr.id}
+                style={{
+                  border: `1.5px solid ${isSelected ? 'var(--primary)' : 'var(--border-color)'}`,
+                  background: isSelected ? '#f5f8ff' : '#fff',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: 16,
+                  position: 'relative',
+                  transition: 'var(--transition)'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 700, fontSize: 15 }}>{addr.fullName}</span>
+                    <span style={{
+                      background: '#f0f0f0',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: '2px 6px',
+                      borderRadius: 3,
+                      textTransform: 'uppercase'
+                    }}>
+                      {addr.addressType}
+                    </span>
+                    {addr.isDefault && (
+                      <span style={{ fontSize: 11, color: 'var(--success-green)', fontWeight: 700, background: '#e8f5e9', padding: '2px 6px', borderRadius: 3 }}>
+                        Default
+                      </span>
+                    )}
+                    {isSelected && (
+                      <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 700, background: '#e3f2fd', padding: '2px 6px', borderRadius: 3 }}>
+                        ✓ Active Delivery Address
+                      </span>
+                    )}
+                    <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{addr.mobileNumber}</span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {!isSelected && (
+                      <button
+                        type="button"
+                        onClick={() => selectAddress(addr)}
+                        style={{
+                          background: '#fff',
+                          border: '1px solid var(--primary)',
+                          color: 'var(--primary)',
+                          padding: '4px 10px',
+                          borderRadius: 4,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Set as Active
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteAddress(addr.id)}
+                      disabled={deletingId === addr.id}
+                      title="Delete Address"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#d32f2f',
+                        padding: 4,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                <p style={{ fontSize: 13, color: '#424242', lineHeight: 1.5, margin: '6px 0 0' }}>
+                  {addr.addressLine}, {addr.city}, {addr.state} - <strong>{addr.pincode}</strong>
+                  {addr.landmark && <span style={{ color: 'var(--text-muted)' }}> (Landmark: {addr.landmark})</span>}
+                </p>
               </div>
-              <p style={{ fontSize: 13, color: '#424242', lineHeight: 1.4 }}>
-                {addr.addressLine}, {addr.city}, {addr.state} - <strong>{addr.pincode}</strong>
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

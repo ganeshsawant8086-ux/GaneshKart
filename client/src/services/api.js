@@ -434,9 +434,9 @@ export const api = {
         {
           id: 1,
           fullName: 'Ganesh Sawant',
-          phone: '9876543210',
+          mobileNumber: '9876543210',
           pincode: '400001',
-          streetAddress: 'Flat 402, Shree Ganesh Heights, MG Road',
+          addressLine: 'Flat 402, Shree Ganesh Heights, MG Road',
           city: 'Mumbai',
           state: 'Maharashtra',
           landmark: 'Near Chhatrapati Shivaji Terminus',
@@ -446,9 +446,9 @@ export const api = {
         {
           id: 2,
           fullName: 'Ganesh Sawant',
-          phone: '9876543210',
+          mobileNumber: '9876543210',
           pincode: '560001',
-          streetAddress: 'Tech Park Tower 3, 5th Floor, Outer Ring Road',
+          addressLine: 'Tech Park Tower 3, 5th Floor, Outer Ring Road',
           city: 'Bengaluru',
           state: 'Karnataka',
           landmark: 'Opposite EcoSpace',
@@ -471,6 +471,19 @@ export const api = {
       list.push(newAddr);
       setStorage('gk_addresses', list);
       return newAddr;
+    }
+  },
+
+  deleteAddress: async (id) => {
+    try {
+      return await request(`/addresses/${id}`, {
+        method: 'DELETE',
+      });
+    } catch {
+      let list = getStorage('gk_addresses', []);
+      list = list.filter((item) => item.id !== Number(id));
+      setStorage('gk_addresses', list);
+      return { success: true };
     }
   },
 };

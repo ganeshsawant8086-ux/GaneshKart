@@ -8,18 +8,35 @@ import { validateCityPincodeMatch } from '../data/indiaLocations';
 
 export default function Checkout({ onProceedToPayment, onBackToCart }) {
   const { cart } = useCart();
-  const { user, addresses } = useAuth();
+  const { user, addresses, selectedAddress } = useAuth();
+
+  const activeAddr = selectedAddress || addresses[0] || null;
 
   const [formData, setFormData] = useState({
-    customerName: addresses[0]?.fullName || user?.fullName || 'Ganesh Sharma',
-    phoneNumber: addresses[0]?.mobileNumber || user?.phoneNumber || '9876543210',
+    customerName: activeAddr?.fullName || user?.fullName || '',
+    phoneNumber: activeAddr?.mobileNumber || user?.phoneNumber || '',
     email: user?.email || 'ganesh@ganeshkart.com',
-    shippingAddress: addresses[0]?.addressLine || 'Flat 402, Shree Ganesh Heights, MG Road',
-    city: addresses[0]?.city || 'Mumbai',
-    state: addresses[0]?.state || 'Maharashtra',
-    pincode: addresses[0]?.pincode || '400001',
+    shippingAddress: activeAddr?.addressLine || '',
+    city: activeAddr?.city || '',
+    state: activeAddr?.state || '',
+    pincode: activeAddr?.pincode || '',
     paymentMethod: 'UPI',
   });
+
+  // Keep form data synchronized with customer's active chosen address
+  useEffect(() => {
+    if (activeAddr) {
+      setFormData((prev) => ({
+        ...prev,
+        customerName: activeAddr.fullName || prev.customerName,
+        phoneNumber: activeAddr.mobileNumber || prev.phoneNumber,
+        shippingAddress: activeAddr.addressLine || prev.shippingAddress,
+        city: activeAddr.city || prev.city,
+        state: activeAddr.state || prev.state,
+        pincode: activeAddr.pincode || prev.pincode,
+      }));
+    }
+  }, [activeAddr]);
 
   const [validationError, setValidationError] = useState('');
 

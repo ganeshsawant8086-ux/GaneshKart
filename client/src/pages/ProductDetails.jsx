@@ -8,13 +8,23 @@ import {
 import { api } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { useAuth } from '../context/AuthContext';
 import { getProductElectronicDetails } from '../data/electronicsDetails';
 
 export default function ProductDetails({ productId, onBack, onNavigate }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [pincode, setPincode] = useState('400001');
+  const { selectedAddress, addresses, selectAddress } = useAuth();
+  const [pincode, setPincode] = useState('413304');
   const [pincodeChecked, setPincodeChecked] = useState(true);
+  const [showAddressPicker, setShowAddressPicker] = useState(false);
+
+  // Sync pincode when selected customer address changes
+  useEffect(() => {
+    if (selectedAddress?.pincode) {
+      setPincode(selectedAddress.pincode);
+    }
+  }, [selectedAddress]);
 
   // Electronics interactive state
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
@@ -367,34 +377,125 @@ export default function ProductDetails({ productId, onBack, onNavigate }) {
 
           {/* Delivery Details Section */}
           <div className="delivery-info-card">
-            <div className="delivery-location-row">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <MapPin size={16} color="var(--primary)" />
-                <span>Deliver to: <strong>WORK Vitthal lad complex shop no 33</strong></span>
+            <div className="delivery-location-row" style={{ flexWrap: 'wrap', gap: 10, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flex: 1, minWidth: 220 }}>
+                <MapPin size={18} color="var(--primary)" style={{ marginTop: 2, flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: 13, color: '#212121' }}>
+                    Deliver to:{' '}
+                    <strong>
+                      {selectedAddress
+                        ? `${selectedAddress.fullName} (${selectedAddress.addressType || 'Home'})`
+                        : 'Select Delivery Address'}
+                    </strong>
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                    {selectedAddress
+                      ? `${selectedAddress.addressLine}, ${selectedAddress.city} - ${selectedAddress.pincode}`
+                      : 'No address chosen'}
+                  </div>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input
-                  type="text"
-                  value={pincode}
-                  onChange={(e) => setPincode(e.target.value)}
-                  style={{
-                    padding: '4px 8px',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 4,
-                    width: 80,
-                    fontSize: 12,
-                    fontWeight: 600
-                  }}
-                  maxLength={6}
-                />
-                <button
-                  onClick={() => setPincodeChecked(true)}
-                  style={{ color: 'var(--primary)', fontWeight: 700, fontSize: 12 }}
-                >
-                  Check
-                </button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {addresses.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddressPicker(!showAddressPicker)}
+                    style={{
+                      background: '#f0f5ff',
+                      color: 'var(--primary)',
+                      border: '1px solid #c7d9fe',
+                      padding: '5px 10px',
+                      borderRadius: 4,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showAddressPicker ? 'Close' : 'Change Address'}
+                  </button>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <input
+                    type="text"
+                    value={pincode}
+                    onChange={(e) => setPincode(e.target.value)}
+                    style={{
+                      padding: '4px 8px',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 4,
+                      width: 80,
+                      fontSize: 12,
+                      fontWeight: 600
+                    }}
+                    maxLength={6}
+                  />
+                  <button
+                    onClick={() => setPincodeChecked(true)}
+                    style={{ color: 'var(--primary)', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+                  >
+                    Check
+                  </button>
+                </div>
               </div>
             </div>
+
+            {/* Dynamic Address Switcher Dropdown */}
+            {showAddressPicker && addresses.length > 0 && (
+              <div style={{
+                marginTop: 12,
+                padding: 12,
+                background: '#f8fafc',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-sm)'
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: 'var(--text-dark)' }}>
+                  Choose from saved addresses:
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {addresses.map((addr) => {
+                    const isCurrent = selectedAddress?.id === addr.id;
+                    return (
+                      <div
+                        key={addr.id}
+                        onClick={() => {
+                          selectAddress(addr);
+                          setPincode(addr.pincode);
+                          setShowAddressPicker(false);
+                        }}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: 4,
+                          border: `1.5px solid ${isCurrent ? 'var(--primary)' : 'var(--border-light)'}`,
+                          background: isCurrent ? '#ffffff' : '#fcfcfc',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          fontSize: 12
+                        }}
+                      >
+                        <div>
+                          <strong>{addr.fullName}</strong>{' '}
+                          <span style={{ fontSize: 10, background: '#eee', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>
+                            {addr.addressType}
+                          </span>
+                          <span style={{ color: '#555', marginLeft: 8 }}>
+                            {addr.addressLine}, {addr.city} - {addr.pincode}
+                          </span>
+                        </div>
+                        {isCurrent ? (
+                          <span style={{ color: 'var(--primary)', fontWeight: 800 }}>✓ Selected</span>
+                        ) : (
+                          <span style={{ color: 'var(--primary)', fontSize: 11, fontWeight: 600 }}>Deliver Here</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="delivery-date-tag">
               <Truck size={16} color="var(--success-green)" />
