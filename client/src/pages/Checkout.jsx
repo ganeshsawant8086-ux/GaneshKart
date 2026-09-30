@@ -12,10 +12,22 @@ export default function Checkout({ onProceedToPayment, onBackToCart, onOpenLogin
 
   const activeAddr = selectedAddress || (Array.isArray(addresses) && addresses[0]) || null;
 
+  const cleanName = (val) => {
+    if (!val) return '';
+    if (val.startsWith('Customer ') || val.includes('GaneshKart Customer')) return '';
+    return val;
+  };
+
+  const cleanEmail = (val) => {
+    if (!val) return '';
+    if (val.includes('@customer.ganeshkart.com') || val.includes('user_')) return '';
+    return val;
+  };
+
   const [formData, setFormData] = useState({
-    customerName: activeAddr?.fullName || user?.fullName || '',
+    customerName: cleanName(activeAddr?.fullName) || '',
     phoneNumber: activeAddr?.mobileNumber || user?.phoneNumber || '',
-    email: user?.email || '',
+    email: cleanEmail(user?.email) || '',
     shippingAddress: activeAddr?.addressLine || '',
     city: activeAddr?.city || '',
     state: activeAddr?.state || '',
@@ -28,7 +40,7 @@ export default function Checkout({ onProceedToPayment, onBackToCart, onOpenLogin
     if (activeAddr) {
       setFormData((prev) => ({
         ...prev,
-        customerName: activeAddr.fullName || prev.customerName,
+        customerName: cleanName(activeAddr.fullName) || prev.customerName,
         phoneNumber: activeAddr.mobileNumber || prev.phoneNumber,
         shippingAddress: activeAddr.addressLine || prev.shippingAddress,
         city: activeAddr.city || prev.city,

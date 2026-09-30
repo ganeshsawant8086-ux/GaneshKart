@@ -156,11 +156,14 @@ namespace GaneshKart.API.Controllers
                 await _context.SaveChangesAsync();
             }
 
+            string displayFullName = user.FullName.StartsWith("Customer ") ? "" : user.FullName;
+            string displayEmail = user.Email.Contains("@customer.ganeshkart.com") ? "" : user.Email;
+
             return Ok(new UserResponseDto
             {
                 Id = user.Id,
-                FullName = user.FullName,
-                Email = user.Email,
+                FullName = displayFullName,
+                Email = displayEmail,
                 PhoneNumber = user.PhoneNumber,
                 Role = user.Role
             });

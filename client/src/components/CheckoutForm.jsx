@@ -191,15 +191,14 @@ export default function CheckoutForm({ formData, setFormData, onPlaceOrder, addr
             </div>
 
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label className="form-label">Email Address *</label>
+              <label className="form-label">Email Address</label>
               <input
                 type="email"
                 name="email"
                 className="form-input"
-                placeholder="ganesh@example.com (For order invoice)"
+                placeholder="Optional — for order invoice"
                 value={formData.email}
                 onChange={handleChange}
-                required
               />
             </div>
 

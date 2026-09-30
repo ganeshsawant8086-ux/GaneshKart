@@ -19,8 +19,7 @@ namespace GaneshKart.API.DTOs
         [Required]
         public string PhoneNumber { get; set; } = string.Empty;
 
-        [Required]
-        public string Email { get; set; } = string.Empty;
+        public string? Email { get; set; } = string.Empty;
 
         [Required]
         public string ShippingAddress { get; set; } = string.Empty;
