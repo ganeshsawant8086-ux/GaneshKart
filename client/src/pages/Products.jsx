@@ -9,7 +9,9 @@ export default function Products({
   initialCategory = 'All',
   initialSearch = '',
   onViewProduct,
-  onNavigateCategory
+  onNavigateCategory,
+  onNavigate,
+  onOpenLogin
 }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -191,6 +193,8 @@ export default function Products({
             sortBy={sortBy}
             onSortChange={setSortBy}
             onViewDetails={onViewProduct}
+            onNavigate={onNavigate}
+            onOpenLogin={onOpenLogin}
           />
         </main>
       </div>

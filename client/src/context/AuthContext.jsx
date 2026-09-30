@@ -18,22 +18,46 @@ export const AuthProvider = ({ children }) => {
 
   const isAdmin = Boolean(user && (user.role === 'Admin' || user.phoneNumber === '8668811021'));
 
-  const loadProfileAndAddresses = useCallback(async () => {
+  // Clean legacy un-scoped addresses to prevent leakage across customers
+  useEffect(() => {
+    try {
+      const legacyGlobal = localStorage.getItem('gk_addresses');
+      if (legacyGlobal) {
+        const parsed = JSON.parse(legacyGlobal);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Preserve Ganesh Sawant's address for Ganesh Sawant / Admin
+          if (!localStorage.getItem('gk_addresses_8668811021')) {
+            localStorage.setItem('gk_addresses_8668811021', JSON.stringify(parsed));
+          }
+          if (!localStorage.getItem('gk_addresses_2')) {
+            localStorage.setItem('gk_addresses_2', JSON.stringify(parsed));
+          }
+        }
+        localStorage.removeItem('gk_addresses');
+        localStorage.removeItem('gk_selected_address_id');
+      }
+    } catch {}
+  }, []);
+
+  const loadProfileAndAddresses = useCallback(async (targetUser) => {
+    const activeUser = targetUser !== undefined ? targetUser : user;
+    
+    // If no user is logged in, address must be completely empty
+    if (!activeUser || !activeUser.id) {
+      setAddresses([]);
+      setSelectedAddress(null);
+      return;
+    }
+
     try {
       setLoading(true);
-      const savedUserStr = localStorage.getItem('gk_auth_user');
-      if (savedUserStr) {
-        try {
-          const parsed = JSON.parse(savedUserStr);
-          setUser(parsed);
-        } catch {}
-      }
-
-      const addrData = await api.getAddresses();
-      if (addrData && Array.isArray(addrData)) {
+      const userKey = activeUser.phoneNumber || activeUser.id;
+      const addrData = await api.getAddresses(activeUser.id);
+      
+      if (addrData && Array.isArray(addrData) && addrData.length > 0) {
         setAddresses(addrData);
 
-        const savedSelectedId = localStorage.getItem('gk_selected_address_id');
+        const savedSelectedId = localStorage.getItem(`gk_selected_address_id_${userKey}`);
         let activeAddr = null;
 
         if (savedSelectedId) {
@@ -45,15 +69,22 @@ export const AuthProvider = ({ children }) => {
 
         setSelectedAddress(activeAddr);
         if (activeAddr) {
-          localStorage.setItem('gk_selected_address_id', String(activeAddr.id));
+          localStorage.setItem(`gk_selected_address_id_${userKey}`, String(activeAddr.id));
         }
+      } else {
+        // Completely blank for new customer
+        setAddresses([]);
+        setSelectedAddress(null);
+        localStorage.removeItem(`gk_selected_address_id_${userKey}`);
       }
     } catch (err) {
       console.warn('Backend user profile fallback in use:', err);
+      setAddresses([]);
+      setSelectedAddress(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     loadProfileAndAddresses();
@@ -68,15 +99,16 @@ export const AuthProvider = ({ children }) => {
     }
 
     setSelectedAddress(target);
-    if (target?.id) {
-      localStorage.setItem('gk_selected_address_id', String(target.id));
+    const userKey = user?.phoneNumber || user?.id;
+    if (userKey && target?.id) {
+      localStorage.setItem(`gk_selected_address_id_${userKey}`, String(target.id));
     }
   };
 
   const addAddress = async (newAddressData) => {
     try {
-      const created = await api.addAddress(newAddressData);
-      await loadProfileAndAddresses();
+      const created = await api.addAddress(newAddressData, user?.id);
+      await loadProfileAndAddresses(user);
       if (created) {
         selectAddress(created);
       }
@@ -89,8 +121,8 @@ export const AuthProvider = ({ children }) => {
 
   const deleteAddress = async (addressId) => {
     try {
-      await api.deleteAddress(addressId);
-      await loadProfileAndAddresses();
+      await api.deleteAddress(addressId, user?.id);
+      await loadProfileAndAddresses(user);
       return true;
     } catch (err) {
       console.error('Failed to delete address:', err);
@@ -98,17 +130,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = (userData) => {
+  const login = async (userData) => {
     try {
       localStorage.setItem('gk_auth_user', JSON.stringify(userData));
     } catch {}
     setUser(userData);
+    // Reset addresses to blank until specifically loaded for this user
+    setAddresses([]);
+    setSelectedAddress(null);
+    await loadProfileAndAddresses(userData);
   };
 
   const logout = () => {
     try {
+      const userKey = user?.phoneNumber || user?.id;
+      if (userKey) {
+        localStorage.removeItem(`gk_selected_address_id_${userKey}`);
+      }
       localStorage.removeItem('gk_auth_user');
       localStorage.removeItem('gk_selected_address_id');
+      localStorage.removeItem('gk_addresses');
     } catch {}
     setUser(null);
     setAddresses([]);

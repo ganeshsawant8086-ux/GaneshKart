@@ -3,7 +3,7 @@ import { ArrowRight, Zap, ShieldCheck, Truck, RefreshCw, Sparkles, Flame } from 
 import { api } from '../services/api';
 import ProductCard from '../components/ProductCard';
 
-export default function Home({ onNavigate, onViewProduct }) {
+export default function Home({ onNavigate, onViewProduct, onOpenLogin }) {
   const [deals, setDeals] = useState([]);
   const [electronics, setElectronics] = useState([]);
   const [fashion, setFashion] = useState([]);
@@ -111,7 +111,13 @@ export default function Home({ onNavigate, onViewProduct }) {
           ) : (
             <div className="products-grid">
               {deals.map((p) => (
-                <ProductCard key={p.id} product={p} onViewDetails={onViewProduct} />
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  onViewDetails={onViewProduct}
+                  onNavigate={onNavigate}
+                  onOpenLogin={onOpenLogin}
+                />
               ))}
             </div>
           )}
@@ -137,7 +143,13 @@ export default function Home({ onNavigate, onViewProduct }) {
           ) : (
             <div className="products-grid">
               {electronics.map((p) => (
-                <ProductCard key={p.id} product={p} onViewDetails={onViewProduct} />
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  onViewDetails={onViewProduct}
+                  onNavigate={onNavigate}
+                  onOpenLogin={onOpenLogin}
+                />
               ))}
             </div>
           )}
@@ -163,7 +175,13 @@ export default function Home({ onNavigate, onViewProduct }) {
           ) : (
             <div className="products-grid">
               {fashion.map((p) => (
-                <ProductCard key={p.id} product={p} onViewDetails={onViewProduct} />
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  onViewDetails={onViewProduct}
+                  onNavigate={onNavigate}
+                  onOpenLogin={onOpenLogin}
+                />
               ))}
             </div>
           )}

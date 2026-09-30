@@ -393,38 +393,46 @@ export const api = {
     }
   },
 
-  getAddresses: async () => {
+  getAddresses: async (userId) => {
     try {
-      return await request('/addresses');
+      const url = userId ? `/addresses?userId=${userId}` : '/addresses';
+      return await request(url);
     } catch {
-      return getStorage('gk_addresses', []);
+      if (!userId) return [];
+      return getStorage(`gk_addresses_${userId}`, []);
     }
   },
 
-  addAddress: async (addressData) => {
+  addAddress: async (addressData, userId) => {
     try {
-      return await request('/addresses', {
+      const url = userId ? `/addresses?userId=${userId}` : '/addresses';
+      return await request(url, {
         method: 'POST',
+        headers: userId ? { 'X-User-Id': String(userId) } : {},
         body: JSON.stringify(addressData),
       });
     } catch {
-      const list = getStorage('gk_addresses', []);
-      const newAddr = { id: Date.now(), ...addressData };
+      const key = userId ? `gk_addresses_${userId}` : 'gk_addresses';
+      const list = getStorage(key, []);
+      const newAddr = { id: Date.now(), userId: userId || 1, ...addressData };
       list.push(newAddr);
-      setStorage('gk_addresses', list);
+      setStorage(key, list);
       return newAddr;
     }
   },
 
-  deleteAddress: async (id) => {
+  deleteAddress: async (id, userId) => {
     try {
-      return await request(`/addresses/${id}`, {
+      const url = userId ? `/addresses/${id}?userId=${userId}` : `/addresses/${id}`;
+      return await request(url, {
         method: 'DELETE',
+        headers: userId ? { 'X-User-Id': String(userId) } : {},
       });
     } catch {
-      let list = getStorage('gk_addresses', []);
+      const key = userId ? `gk_addresses_${userId}` : 'gk_addresses';
+      let list = getStorage(key, []);
       list = list.filter((item) => item.id !== Number(id));
-      setStorage('gk_addresses', list);
+      setStorage(key, list);
       return { success: true };
     }
   },

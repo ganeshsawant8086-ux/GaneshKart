@@ -1,9 +1,11 @@
 import React from 'react';
-import { Star, ShoppingCart, Heart, ShieldCheck } from 'lucide-react';
+import { Star, ShoppingCart, Heart, ShieldCheck, Zap } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { useAuth } from '../context/AuthContext';
 
-export default function ProductCard({ product, onViewDetails }) {
+export default function ProductCard({ product, onViewDetails, onNavigate, onOpenLogin }) {
+  const { user } = useAuth();
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
@@ -22,6 +24,24 @@ export default function ProductCard({ product, onViewDetails }) {
   const handleToggleWishlist = (e) => {
     e.stopPropagation();
     toggleWishlist(product.id);
+  };
+
+  const handleBuyOrder = async (e) => {
+    e.stopPropagation();
+    if (!user) {
+      if (onOpenLogin) {
+        onOpenLogin();
+      } else {
+        window.dispatchEvent(new CustomEvent('gk:open-login'));
+      }
+      return;
+    }
+    await addToCart(product.id, 1);
+    if (onNavigate) {
+      onNavigate('checkout');
+    } else {
+      window.dispatchEvent(new CustomEvent('gk:navigate', { detail: 'checkout' }));
+    }
   };
 
   return (
@@ -73,9 +93,13 @@ export default function ProductCard({ product, onViewDetails }) {
 
       {/* Action Buttons */}
       <div className="card-actions">
-        <button className="btn-add-cart" onClick={handleAddToCart}>
+        <button className="btn-add-cart" onClick={handleAddToCart} title="Add to Cart">
           <ShoppingCart size={15} />
           <span>Add to Cart</span>
+        </button>
+        <button className="btn-buy-order" onClick={handleBuyOrder} title="Buy Order immediately">
+          <Zap size={15} fill="#fff" />
+          <span>⚡ Buy Order</span>
         </button>
       </div>
     </article>

@@ -17,23 +17,32 @@ namespace GaneshKart.API.Controllers
             _context = context;
         }
 
-        private async Task<int> GetCurrentUserIdAsync()
+        private int GetTargetUserId(int? queryUserId)
         {
-            var user = await _context.Users.FirstOrDefaultAsync();
-            return user?.Id ?? 1;
+            if (queryUserId.HasValue && queryUserId.Value > 0)
+                return queryUserId.Value;
+
+            if (Request.Headers.TryGetValue("X-User-Id", out var headerVal) && int.TryParse(headerVal, out int uid) && uid > 0)
+                return uid;
+
+            return 0;
         }
 
         /// <summary>
         /// Get all saved addresses for current user
-        /// GET /api/addresses
+        /// GET /api/addresses?userId=123
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Address>>> GetAddresses()
+        public async Task<ActionResult<IEnumerable<Address>>> GetAddresses([FromQuery] int? userId)
         {
-            int userId = await GetCurrentUserIdAsync();
+            int targetUserId = GetTargetUserId(userId);
+            if (targetUserId <= 0)
+            {
+                return Ok(new List<Address>());
+            }
 
             var addresses = await _context.Addresses
-                .Where(a => a.UserId == userId)
+                .Where(a => a.UserId == targetUserId)
                 .OrderByDescending(a => a.IsDefault)
                 .ThenByDescending(a => a.CreatedDate)
                 .ToListAsync();
@@ -43,18 +52,23 @@ namespace GaneshKart.API.Controllers
 
         /// <summary>
         /// Add a new address
-        /// POST /api/addresses
+        /// POST /api/addresses?userId=123
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<Address>> AddAddress([FromBody] CreateAddressDto dto)
+        public async Task<ActionResult<Address>> AddAddress([FromBody] CreateAddressDto dto, [FromQuery] int? userId)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            int userId = await GetCurrentUserIdAsync();
+            int targetUserId = GetTargetUserId(userId);
+            if (targetUserId <= 0)
+            {
+                var firstUser = await _context.Users.FirstOrDefaultAsync();
+                targetUserId = firstUser?.Id ?? 1;
+            }
 
             if (dto.IsDefault)
             {
-                var existingAddresses = await _context.Addresses.Where(a => a.UserId == userId).ToListAsync();
+                var existingAddresses = await _context.Addresses.Where(a => a.UserId == targetUserId).ToListAsync();
                 foreach (var addr in existingAddresses)
                 {
                     addr.IsDefault = false;
@@ -63,7 +77,7 @@ namespace GaneshKart.API.Controllers
 
             var newAddress = new Address
             {
-                UserId = userId,
+                UserId = targetUserId,
                 FullName = dto.FullName,
                 MobileNumber = dto.MobileNumber,
                 Pincode = dto.Pincode,
@@ -84,14 +98,14 @@ namespace GaneshKart.API.Controllers
 
         /// <summary>
         /// Delete address
-        /// DELETE /api/addresses/{id}
+        /// DELETE /api/addresses/{id}?userId=123
         /// </summary>
         [HttpDelete("{id:int}")]
-        public async Task<ActionResult> DeleteAddress(int id)
+        public async Task<ActionResult> DeleteAddress(int id, [FromQuery] int? userId)
         {
-            int userId = await GetCurrentUserIdAsync();
+            int targetUserId = GetTargetUserId(userId);
 
-            var address = await _context.Addresses.FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+            var address = await _context.Addresses.FirstOrDefaultAsync(a => a.Id == id && (targetUserId <= 0 || a.UserId == targetUserId));
             if (address != null)
             {
                 _context.Addresses.Remove(address);

@@ -586,11 +586,13 @@ input, select, textarea {
 
 .card-actions {
   display: flex;
+  flex-direction: column;
   gap: 8px;
+  margin-top: 10px;
 }
 
 .btn-add-cart {
-  flex: 1;
+  width: 100%;
   background-color: var(--accent-yellow);
   color: #fff;
   font-weight: 700;
@@ -601,12 +603,38 @@ input, select, textarea {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  border: none;
+  cursor: pointer;
   transition: var(--transition);
 }
 
 .btn-add-cart:hover {
   background-color: #f39700;
   box-shadow: 0 2px 8px rgba(255, 159, 0, 0.4);
+}
+
+.btn-buy-order {
+  width: 100%;
+  background: linear-gradient(135deg, #fb641b 0%, #f4511e 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 2px 6px rgba(251, 100, 27, 0.25);
+}
+
+.btn-buy-order:hover {
+  background: linear-gradient(135deg, #f4511e 0%, #d84315 100%);
+  box-shadow: 0 4px 10px rgba(251, 100, 27, 0.4);
+  transform: translateY(-1px);
 }
 
 .btn-view-details {

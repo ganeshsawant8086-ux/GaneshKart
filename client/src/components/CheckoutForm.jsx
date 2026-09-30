@@ -10,10 +10,15 @@ export default function CheckoutForm({ formData, setFormData, onPlaceOrder, addr
   const [isAddingNew, setIsAddingNew] = useState(addresses.length === 0);
 
   React.useEffect(() => {
-    if (selectedAddress?.id) {
+    if (addresses.length === 0) {
+      setSelectedAddressId(null);
+      setIsAddingNew(true);
+    } else if (selectedAddress?.id) {
       setSelectedAddressId(selectedAddress.id);
+      setIsAddingNew(false);
     } else if (addresses.length > 0 && !selectedAddressId) {
       setSelectedAddressId(addresses[0].id);
+      setIsAddingNew(false);
     }
   }, [selectedAddress, addresses]);
 

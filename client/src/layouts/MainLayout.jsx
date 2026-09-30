@@ -76,6 +76,20 @@ export default function MainLayout() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Global event listeners for modal and navigation from deep components
+  React.useEffect(() => {
+    const handleOpenLogin = () => setIsLoginModalOpen(true);
+    const handleGlobalNav = (e) => {
+      if (e.detail) navigateTo(e.detail);
+    };
+    window.addEventListener('gk:open-login', handleOpenLogin);
+    window.addEventListener('gk:navigate', handleGlobalNav);
+    return () => {
+      window.removeEventListener('gk:open-login', handleOpenLogin);
+      window.removeEventListener('gk:navigate', handleGlobalNav);
+    };
+  }, []);
+
   return (
     <div className="app-container">
       {/* 1. Top Navbar */}
@@ -111,6 +125,7 @@ export default function MainLayout() {
           <Home
             onNavigate={navigateTo}
             onViewProduct={handleViewProduct}
+            onOpenLogin={() => setIsLoginModalOpen(true)}
           />
         )}
 
@@ -120,6 +135,8 @@ export default function MainLayout() {
             initialSearch={searchQuery}
             onViewProduct={handleViewProduct}
             onNavigateCategory={(cat) => setSelectedCategory(cat)}
+            onNavigate={navigateTo}
+            onOpenLogin={() => setIsLoginModalOpen(true)}
           />
         )}
 

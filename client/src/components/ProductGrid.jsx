@@ -9,6 +9,8 @@ export default function ProductGrid({
   sortBy,
   onSortChange,
   onViewDetails,
+  onNavigate,
+  onOpenLogin,
 }) {
   if (loading) {
     return (
@@ -80,6 +82,8 @@ export default function ProductGrid({
               key={product.id}
               product={product}
               onViewDetails={onViewDetails}
+              onNavigate={onNavigate}
+              onOpenLogin={onOpenLogin}
             />
           ))}
         </div>
