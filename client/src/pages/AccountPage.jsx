@@ -112,9 +112,9 @@ export default function AccountPage({ onNavigate }) {
             {user ? user.fullName.charAt(0) : 'G'}
           </div>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 800 }}>{user?.fullName || 'Ganesh Sharma'}</h1>
+            <h1 style={{ fontSize: 20, fontWeight: 800 }}>{user?.fullName || 'User'}</h1>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
-              {user?.email || 'ganesh@ganeshkart.com'} • {user?.phoneNumber || '+91 98765 43210'}
+              {user?.email || 'No email provided'} • {user?.phoneNumber || 'No phone number provided'}
             </div>
             <span style={{
               display: 'inline-block',

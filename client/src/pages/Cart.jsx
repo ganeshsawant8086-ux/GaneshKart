@@ -6,7 +6,17 @@ import CartSummary from '../components/CartSummary';
 export default function Cart({ onNavigate, onViewProduct }) {
   const { cart, updateQuantity, removeFromCart, clearCart, loading } = useCart();
 
-  if (cart.items.length === 0) {
+  const items = Array.isArray(cart?.items) ? cart.items : [];
+
+  if (loading && items.length === 0) {
+    return (
+      <div className="section-wrapper" style={{ marginTop: 40, textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{ fontSize: 15, color: 'var(--text-muted)' }}>Loading your cart...</div>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
     return (
       <div className="section-wrapper" style={{ marginTop: 40 }}>
         <div style={{
@@ -52,7 +62,7 @@ export default function Cart({ onNavigate, onViewProduct }) {
         </div>
 
         <div>
-          {cart.items.map((item) => (
+          {items.map((item) => (
             <div key={item.id} className="cart-item-row">
               {/* Product Thumbnail */}
               <img

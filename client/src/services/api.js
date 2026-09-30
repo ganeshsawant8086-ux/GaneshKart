@@ -28,21 +28,6 @@ function setStorage(key, val) {
   }
 }
 
-// Initial demo cart items
-const initialCartItems = [
-  {
-    id: 101,
-    productId: 6,
-    quantity: 1,
-    product: MOCK_PRODUCTS.find((p) => p.id === 6),
-  },
-  {
-    id: 102,
-    productId: 21,
-    quantity: 2,
-    product: MOCK_PRODUCTS.find((p) => p.id === 21),
-  },
-];
 
 function calculateCartTotals(items) {
   let originalTotal = 0;
@@ -199,7 +184,7 @@ export const api = {
     try {
       return await request('/cart');
     } catch {
-      const items = getStorage('gk_cart_items', initialCartItems);
+      const items = getStorage('gk_cart_items', []);
       return calculateCartTotals(items);
     }
   },
@@ -211,7 +196,7 @@ export const api = {
         body: JSON.stringify({ productId, quantity }),
       });
     } catch {
-      let items = getStorage('gk_cart_items', initialCartItems);
+      let items = getStorage('gk_cart_items', []);
       const existingIndex = items.findIndex((i) => i.productId === Number(productId));
       const product = MOCK_PRODUCTS.find((p) => p.id === Number(productId));
 
@@ -237,7 +222,7 @@ export const api = {
         body: JSON.stringify({ quantity }),
       });
     } catch {
-      let items = getStorage('gk_cart_items', initialCartItems);
+      let items = getStorage('gk_cart_items', []);
       items = items
         .map((item) => (item.id === cartItemId ? { ...item, quantity } : item))
         .filter((item) => item.quantity > 0);
@@ -252,7 +237,7 @@ export const api = {
         method: 'DELETE',
       });
     } catch {
-      let items = getStorage('gk_cart_items', initialCartItems);
+      let items = getStorage('gk_cart_items', []);
       items = items.filter((item) => item.id !== cartItemId);
       setStorage('gk_cart_items', items);
       return calculateCartTotals(items);
@@ -275,27 +260,7 @@ export const api = {
     try {
       return await request('/orders');
     } catch {
-      return getStorage('gk_orders', [
-        {
-          id: 1001,
-          orderNumber: 'GK-ORD-89472',
-          orderDate: new Date(Date.now() - 86400000 * 2).toISOString(),
-          status: 'Delivered',
-          totalAmount: 26990.00,
-          paymentStatus: 'Paid',
-          paymentMethod: 'UPI',
-          deliveryAddress: 'Flat 402, Shree Ganesh Heights, MG Road, Mumbai, Maharashtra - 400001',
-          items: [
-            {
-              id: 1,
-              productId: 6,
-              quantity: 1,
-              price: 26990.00,
-              product: MOCK_PRODUCTS.find((p) => p.id === 6),
-            },
-          ],
-        },
-      ]);
+      return getStorage('gk_orders', []);
     }
   },
 
@@ -324,7 +289,7 @@ export const api = {
         totalAmount: orderData.totalAmount || 0,
         paymentStatus: 'Paid',
         paymentMethod: orderData.paymentMethod || 'UPI',
-        deliveryAddress: orderData.deliveryAddress || 'Flat 402, Shree Ganesh Heights, MG Road, Mumbai',
+        deliveryAddress: orderData.deliveryAddress || 'No address provided',
         items: orderData.items || [],
       };
       orders.unshift(newOrder);
@@ -416,13 +381,7 @@ export const api = {
     try {
       return await request('/users/current');
     } catch {
-      return {
-        id: 1,
-        fullName: 'Ganesh Sawant',
-        email: 'ganesh@ganeshkart.com',
-        phoneNumber: '+91 98765 43210',
-        role: 'Customer',
-      };
+      return null;
     }
   },
 
@@ -430,32 +389,7 @@ export const api = {
     try {
       return await request('/addresses');
     } catch {
-      return getStorage('gk_addresses', [
-        {
-          id: 1,
-          fullName: 'Ganesh Sawant',
-          mobileNumber: '9876543210',
-          pincode: '400001',
-          addressLine: 'Flat 402, Shree Ganesh Heights, MG Road',
-          city: 'Mumbai',
-          state: 'Maharashtra',
-          landmark: 'Near Chhatrapati Shivaji Terminus',
-          addressType: 'Home',
-          isDefault: true,
-        },
-        {
-          id: 2,
-          fullName: 'Ganesh Sawant',
-          mobileNumber: '9876543210',
-          pincode: '560001',
-          addressLine: 'Tech Park Tower 3, 5th Floor, Outer Ring Road',
-          city: 'Bengaluru',
-          state: 'Karnataka',
-          landmark: 'Opposite EcoSpace',
-          addressType: 'Work',
-          isDefault: false,
-        },
-      ]);
+      return getStorage('gk_addresses', []);
     }
   },
 

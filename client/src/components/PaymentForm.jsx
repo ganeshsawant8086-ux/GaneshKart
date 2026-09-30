@@ -6,7 +6,7 @@ export default function PaymentForm({ amount, onPaymentSuccess }) {
   const [selectedMethod, setSelectedMethod] = useState('UPI'); // 'UPI', 'Credit Card', 'Debit Card', 'Cash on Delivery'
   const [upiId, setUpiId] = useState('ganesh@okhdfcbank');
   const [cardNumber, setCardNumber] = useState('4532 8921 7843 9012');
-  const [cardHolder, setCardHolder] = useState('Ganesh Sharma');
+  const [cardHolder, setCardHolder] = useState('');
   const [expiry, setExpiry] = useState('11/28');
   const [cvv, setCvv] = useState('489');
   const [captchaInput, setCaptchaInput] = useState('7842');

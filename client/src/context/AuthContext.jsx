@@ -4,13 +4,7 @@ import { api } from '../services/api';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState({
-    id: 1,
-    fullName: 'Ganesh Sawant',
-    email: 'ganesh@ganeshkart.com',
-    phoneNumber: '+91 98765 43210',
-    role: 'Customer',
-  });
+  const [user, setUser] = useState(null);
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [loading, setLoading] = useState(false);

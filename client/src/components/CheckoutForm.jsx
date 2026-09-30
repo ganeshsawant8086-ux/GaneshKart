@@ -170,7 +170,7 @@ export default function CheckoutForm({ formData, setFormData, onPlaceOrder, addr
                 type="text"
                 name="customerName"
                 className="form-input"
-                placeholder="e.g. Ganesh Sharma"
+                placeholder="e.g. John Doe"
                 value={formData.customerName}
                 onChange={handleChange}
                 required
