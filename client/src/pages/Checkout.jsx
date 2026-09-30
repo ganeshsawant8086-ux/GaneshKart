@@ -15,7 +15,7 @@ export default function Checkout({ onProceedToPayment, onBackToCart }) {
   const [formData, setFormData] = useState({
     customerName: activeAddr?.fullName || user?.fullName || '',
     phoneNumber: activeAddr?.mobileNumber || user?.phoneNumber || '',
-    email: user?.email || 'ganesh@ganeshkart.com',
+    email: user?.email || '',
     shippingAddress: activeAddr?.addressLine || '',
     city: activeAddr?.city || '',
     state: activeAddr?.state || '',

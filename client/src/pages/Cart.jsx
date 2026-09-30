@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import CartSummary from '../components/CartSummary';
 
@@ -8,15 +8,18 @@ export default function Cart({ onNavigate, onViewProduct }) {
 
   const items = Array.isArray(cart?.items) ? cart.items : [];
 
+  // Show spinner while loading on first render
   if (loading && items.length === 0) {
     return (
-      <div className="section-wrapper" style={{ marginTop: 40, textAlign: 'center', padding: '60px 20px' }}>
+      <div className="section-wrapper" style={{ marginTop: 40, textAlign: 'center', padding: '80px 20px' }}>
+        <Loader2 size={40} color="var(--primary)" style={{ margin: '0 auto 16px', animation: 'spin 1s linear infinite' }} />
         <div style={{ fontSize: 15, color: 'var(--text-muted)' }}>Loading your cart...</div>
       </div>
     );
   }
 
-  if (items.length === 0) {
+  // Empty cart state
+  if (!loading && items.length === 0) {
     return (
       <div className="section-wrapper" style={{ marginTop: 40 }}>
         <div style={{
@@ -31,7 +34,7 @@ export default function Cart({ onNavigate, onViewProduct }) {
           <ShoppingBag size={64} color="#b0bec5" style={{ margin: '0 auto 16px' }} />
           <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Your Cart is Empty!</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>
-            Explore our vast catalog of electronics, mobiles, fashion & groceries and add items to your cart.
+            Explore our vast catalog of electronics, mobiles, fashion &amp; groceries and add items to your cart.
           </p>
           <button
             className="btn-proceed"
@@ -74,7 +77,7 @@ export default function Cart({ onNavigate, onViewProduct }) {
               />
 
               {/* Item Info */}
-              <div>
+              <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                   {item.brand}
                 </div>
@@ -85,14 +88,14 @@ export default function Cart({ onNavigate, onViewProduct }) {
                   {item.productName}
                 </h4>
 
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 16, fontWeight: 800 }}>
-                    ₹{item.discountPrice.toLocaleString('en-IN')}
+                    ₹{Number(item.discountPrice || 0).toLocaleString('en-IN')}
                   </span>
                   {item.price > item.discountPrice && (
                     <>
                       <span style={{ fontSize: 13, textDecoration: 'line-through', color: 'var(--text-muted)' }}>
-                        ₹{item.price.toLocaleString('en-IN')}
+                        ₹{Number(item.price || 0).toLocaleString('en-IN')}
                       </span>
                       <span style={{ fontSize: 12, color: 'var(--success-green)', fontWeight: 700 }}>
                         Save ₹{((item.price - item.discountPrice) * item.quantity).toLocaleString('en-IN')}
@@ -127,10 +130,12 @@ export default function Cart({ onNavigate, onViewProduct }) {
                     onClick={() => removeFromCart(item.id)}
                     style={{
                       marginLeft: 16,
-                      color: 'var(--text-dark)',
+                      color: '#d32f2f',
                       fontSize: 13,
                       fontWeight: 700,
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      background: 'none',
+                      border: 'none',
                     }}
                   >
                     REMOVE
@@ -139,7 +144,7 @@ export default function Cart({ onNavigate, onViewProduct }) {
               </div>
 
               {/* Delivery Estimation */}
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'right' }}>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'right', alignSelf: 'flex-end' }}>
                 Delivery by Tomorrow | <span style={{ color: 'var(--success-green)', fontWeight: 700 }}>Free</span>
               </div>
             </div>
@@ -147,7 +152,7 @@ export default function Cart({ onNavigate, onViewProduct }) {
         </div>
       </div>
 
-      {/* Right: Price Summary */}
+      {/* Right: Price Summary — Place Order goes to checkout */}
       <CartSummary
         cart={cart}
         onProceed={() => onNavigate('checkout')}

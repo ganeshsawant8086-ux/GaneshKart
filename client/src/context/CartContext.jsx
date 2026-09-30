@@ -14,7 +14,8 @@ export const CartProvider = ({ children }) => {
     finalAmount: 0,
     items: [],
   });
-  const [loading, setLoading] = useState(false);
+  // Start as true so Cart page shows "Loading..." instead of "Empty" on first load
+  const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState(null);
 
   const showToast = (message) => {
@@ -25,11 +26,18 @@ export const CartProvider = ({ children }) => {
   };
 
   const fetchCart = useCallback(async () => {
+    setLoading(true);
     try {
       const data = await api.getCart();
-      setCart(data);
+      // Normalize: ensure items is always an array
+      setCart({
+        ...data,
+        items: Array.isArray(data?.items) ? data.items : [],
+      });
     } catch (err) {
       console.error('Failed to fetch cart:', err);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
