@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/server/">
+    <Project Path="server/GaneshKart.API/GaneshKart.API.csproj" />
+  </Folder>
+</Solution>
