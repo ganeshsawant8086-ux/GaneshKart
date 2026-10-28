@@ -113,5 +113,42 @@ namespace GaneshKart.API.Controllers
 
             return Ok(products);
         }
+
+        /// <summary>
+        /// Create a new product with image and details
+        /// POST /api/products
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<Product>> CreateProduct([FromBody] Product product)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            product.CreatedDate = DateTime.UtcNow;
+            _context.Products.Add(product);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, product);
+        }
+
+        /// <summary>
+        /// Delete a product by Id
+        /// DELETE /api/products/5
+        /// </summary>
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeleteProduct(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null)
+            {
+                return NotFound(new { message = $"Product with ID {id} not found." });
+            }
+
+            _context.Products.Remove(product);
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true, message = "Product deleted successfully." });
+        }
     }
 }

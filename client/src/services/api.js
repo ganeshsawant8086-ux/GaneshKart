@@ -101,7 +101,8 @@ export const api = {
       return await request(`/products${queryString}`);
     } catch {
       // Offline / Vercel fallback
-      let list = [...MOCK_PRODUCTS];
+      const customProducts = getStorage('gk_custom_products', []);
+      let list = [...customProducts, ...MOCK_PRODUCTS];
 
       if (params.category && params.category !== 'All') {
         list = list.filter((p) => p.category.toLowerCase() === params.category.toLowerCase());
@@ -164,6 +165,44 @@ export const api = {
       return await request(`/products/category/${encodeURIComponent(category)}`);
     } catch {
       return MOCK_PRODUCTS.filter((p) => p.category.toLowerCase() === category.toLowerCase());
+    }
+  },
+
+  addProduct: async (productData) => {
+    try {
+      return await request('/products', {
+        method: 'POST',
+        body: JSON.stringify(productData),
+      });
+    } catch {
+      let customProducts = getStorage('gk_custom_products', []);
+      const newProd = {
+        id: Date.now(),
+        ...productData,
+        price: Number(productData.price) || 0,
+        discountPrice: Number(productData.discountPrice) || Number(productData.price) || 0,
+        rating: Number(productData.rating) || 4.5,
+        stock: Number(productData.stock) || 10,
+      };
+      customProducts.unshift(newProd);
+      setStorage('gk_custom_products', customProducts);
+      MOCK_PRODUCTS.unshift(newProd);
+      return newProd;
+    }
+  },
+
+  deleteProduct: async (id) => {
+    try {
+      return await request(`/products/${id}`, {
+        method: 'DELETE',
+      });
+    } catch {
+      let customProducts = getStorage('gk_custom_products', []);
+      customProducts = customProducts.filter((p) => p.id !== Number(id));
+      setStorage('gk_custom_products', customProducts);
+      const idx = MOCK_PRODUCTS.findIndex((p) => p.id === Number(id));
+      if (idx > -1) MOCK_PRODUCTS.splice(idx, 1);
+      return { success: true };
     }
   },
 
